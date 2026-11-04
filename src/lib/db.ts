@@ -5,19 +5,47 @@ import { Product, ProductImage, BusinessSettings, DashboardStats } from './types
 
 const dataDir = path.join(process.cwd(), 'data');
 if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+  } catch (e) {
+    // Read-only filesystem in serverless environments
+  }
 }
 
 const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (e) {
+    // Read-only filesystem in serverless environments
+  }
 }
 
-const dbPath = path.join(dataDir, 'srisai.db');
+let dbPath = path.join(dataDir, 'srisai.db');
+// On Vercel / serverless runtimes, root filesystem is read-only.
+// Copy bundled sqlite database into /tmp so SQLite can operate with write permissions.
+if (process.env.VERCEL) {
+  const tmpDbPath = path.join('/tmp', 'srisai.db');
+  if (!fs.existsSync(tmpDbPath) && fs.existsSync(dbPath)) {
+    try {
+      fs.copyFileSync(dbPath, tmpDbPath);
+    } catch (e) {
+      console.error('Failed to copy db to /tmp:', e);
+    }
+  }
+  if (fs.existsSync(tmpDbPath)) {
+    dbPath = tmpDbPath;
+  }
+}
+
 const db = new Database(dbPath);
 
 // Enable WAL mode for better concurrency performance
-db.pragma('journal_mode = WAL');
+try {
+  db.pragma('journal_mode = WAL');
+} catch (e) {
+  // Ignored in restricted environments
+}
 
 // Initialize Database Tables
 export function initDB() {

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['better-sqlite3'],
   // Allow local network IP access for testing on phones and other devices
   allowedDevOrigins: [
     'localhost:3000',

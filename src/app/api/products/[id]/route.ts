@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductBySlugOrId, updateProduct, updateProductStatus, deleteProduct } from '@/lib/db';
 import { getAdminSession } from '@/lib/auth';
+import { deleteImageFile } from '@/lib/storage';
 
 export async function GET(
   request: NextRequest,
@@ -61,13 +62,33 @@ export async function DELETE(
     }
 
     const { id } = await params;
+
+    // Fetch existing product to delete its images from Cloudinary & storage
+    const product = getProductBySlugOrId(id);
+    if (product) {
+      const urlsToDelete = new Set<string>();
+      if (product.primary_image) {
+        urlsToDelete.add(product.primary_image);
+      }
+      if (product.images && Array.isArray(product.images)) {
+        product.images.forEach(img => {
+          if (img.image_url) urlsToDelete.add(img.image_url);
+        });
+      }
+
+      // Clean up all images from Cloudinary & local storage
+      for (const imgUrl of urlsToDelete) {
+        await deleteImageFile(imgUrl);
+      }
+    }
+
     const deleted = deleteProduct(id);
 
     if (!deleted) {
       return NextResponse.json({ success: false, error: 'Product not found or delete failed' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, message: 'Product deleted successfully' });
+    return NextResponse.json({ success: true, message: 'Product and images deleted successfully' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

@@ -2,43 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
 import path from 'path';
 import fs from 'fs';
-import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
-
-// Check if Cloudinary credentials are provided via environment variables
-const hasCloudinary = Boolean(
-  (process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET) ||
-    process.env.CLOUDINARY_URL
-);
-
-if (hasCloudinary) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-  });
-}
-
-function uploadToCloudinary(buffer: Buffer): Promise<UploadApiResponse> {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'sri-sai-computers',
-        resource_type: 'image',
-        transformation: [
-          { quality: 'auto', fetch_format: 'auto' } // automatic WebP/AVIF compression
-        ]
-      },
-      (error, result) => {
-        if (error || !result) return reject(error);
-        resolve(result);
-      }
-    );
-    uploadStream.end(buffer);
-  });
-}
+import { uploadToCloudinary, deleteImageFile, hasCloudinary } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,6 +87,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, url: publicUrl });
   } catch (error: any) {
     console.error('Image upload error:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getAdminSession();
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Unauthorized admin access' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const url = body?.url;
+
+    if (!url || typeof url !== 'string') {
+      return NextResponse.json({ success: false, error: 'Image URL is required' }, { status: 400 });
+    }
+
+    const deleteResult = await deleteImageFile(url);
+    if (!deleteResult.success) {
+      return NextResponse.json({ success: false, error: deleteResult.error }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Image deleted successfully',
+      result: deleteResult.result
+    });
+  } catch (error: any) {
+    console.error('Image delete error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

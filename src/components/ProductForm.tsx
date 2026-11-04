@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/lib/types';
-import { Upload, X, Plus, Eye, Save, ArrowLeft, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, X, Plus, Eye, Save, ArrowLeft, Image as ImageIcon, AlertCircle, Minus, Loader2 } from 'lucide-react';
 
 interface ProductFormProps {
   initialData?: Partial<Product>;
@@ -53,6 +53,7 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
   const [images, setImages] = useState<string[]>(initialImages);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [deletingImageIdx, setDeletingImageIdx] = useState<number | null>(null);
 
   // Auto-fill Title when Brand & Model change
   const handleAutoTitle = () => {
@@ -88,6 +89,8 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
       setError('Error uploading image file');
     } finally {
       setUploadingImage(false);
+      // Reset input value so the same file can be re-uploaded if needed
+      e.target.value = '';
     }
   };
 
@@ -97,8 +100,24 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
     setImageUrlInput('');
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  // Remove image from form and delete from Cloudinary / disk storage
+  const removeImage = async (index: number) => {
+    const urlToRemove = images[index];
+    if (!urlToRemove) return;
+
+    setDeletingImageIdx(index);
+    try {
+      await fetch('/api/upload', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToRemove })
+      });
+    } catch (err) {
+      console.error('Remote image removal error:', err);
+    } finally {
+      setImages(prev => prev.filter((_, i) => i !== index));
+      setDeletingImageIdx(null);
+    }
   };
 
   const setPrimaryImage = (index: number) => {
@@ -529,39 +548,56 @@ export default function ProductForm({ initialData, isEdit }: ProductFormProps) {
             {/* Image List Preview & Selector */}
             {images.length > 0 ? (
               <div className="space-y-2 pt-2">
-                <div className="text-[11px] font-bold text-slate-400 uppercase">Click image to set Primary</div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
+                  <span className="uppercase tracking-wider">Click photo to set Primary</span>
+                  <span className="text-slate-500 font-normal">Tap <span className="text-rose-400 font-bold">−</span> to remove</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
                   {images.map((img, idx) => (
                     <div
-                      key={idx}
-                      className={`relative aspect-square rounded-xl overflow-hidden border-2 bg-slate-950 group ${
-                        idx === 0 ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-800'
+                      key={`${img}-${idx}`}
+                      onClick={() => {
+                        if (idx !== 0) setPrimaryImage(idx);
+                      }}
+                      className={`relative aspect-square rounded-xl overflow-hidden border-2 bg-slate-950 transition-all cursor-pointer group ${
+                        idx === 0 ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={img} alt={`Laptop photo ${idx + 1}`} className="w-full h-full object-cover" />
+                      
+                      {/* Primary Indicator Badge */}
                       {idx === 0 && (
-                        <span className="absolute top-1 left-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
+                        <span className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow z-10">
                           PRIMARY
                         </span>
                       )}
-                      <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
-                        {idx !== 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setPrimaryImage(idx)}
-                            className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded"
-                          >
-                            Set Main
-                          </button>
+
+                      {/* Top-Right Minus Button (Always Visible) */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage(idx);
+                        }}
+                        disabled={deletingImageIdx === idx}
+                        title="Remove image and delete from Cloudinary"
+                        className="absolute top-1.5 right-1.5 z-20 w-6 h-6 bg-rose-600 hover:bg-rose-700 active:scale-90 text-white rounded-full flex items-center justify-center shadow-lg border border-white/20 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {deletingImageIdx === idx ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Minus className="w-3.5 h-3.5 stroke-[3]" />
                         )}
-                        <button
-                          type="button"
-                          onClick={() => removeImage(idx)}
-                          className="bg-rose-600 text-white p-1 rounded"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      </button>
+
+                      {/* Hover / Tap Overlay to Set Main */}
+                      {idx !== 0 && (
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-end justify-center pb-2 transition-opacity pointer-events-none">
+                          <span className="bg-slate-900/90 text-white text-[10px] font-medium px-2 py-0.5 rounded shadow border border-slate-700">
+                            Click to set Primary
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

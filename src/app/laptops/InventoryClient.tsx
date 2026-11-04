@@ -154,156 +154,162 @@ export default function InventoryClient({ initialProducts, initialSettings }: In
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* DESKTOP FILTERS SIDEBAR */}
-        <aside className="hidden lg:block space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-200 h-fit sticky top-24">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-            <h2 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-              <Filter className="w-4 h-4 text-blue-600" />
+        <aside className="hidden lg:block space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200 h-fit sticky top-20 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+            <h2 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-blue-600" />
               <span>Filter Stock</span>
             </h2>
             <button
               onClick={clearAllFilters}
-              className="text-xs text-blue-700 hover:text-blue-900 font-bold flex items-center gap-1"
+              className="text-[11px] text-blue-700 hover:text-blue-900 font-bold flex items-center gap-1 transition-colors"
             >
-              <RefreshCw className="w-3 h-3" />
+              <RefreshCw className="w-2.5 h-2.5" />
               <span>Reset</span>
             </button>
           </div>
 
           {/* Search Input */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Search</label>
+          <div className="space-y-0.5">
+            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Search</label>
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={e => handleFilterChange(setSearch, e.target.value)}
-                placeholder="Model, CPU, SKU..."
-                className="w-full bg-white text-slate-900 text-xs pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500"
+                placeholder="Model, CPU, specs..."
+                className="w-full bg-white text-slate-900 text-xs pl-8 pr-2.5 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Status Filter */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Stock Status</label>
-            <select
-              value={statusFilter}
-              onChange={e => handleFilterChange(setStatusFilter, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300 font-medium"
-            >
-              <option value="AVAILABLE">Available Only</option>
-              <option value="RESERVED">Reserved</option>
-              <option value="SOLD">Sold Stock</option>
-              <option value="ALL">Show All Statuses</option>
-            </select>
+          {/* 2-Column Grid: Brand & Processor */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Brand</label>
+              <select
+                value={brand}
+                onChange={e => handleFilterChange(setBrand, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">All Brands</option>
+                <option value="HP">HP</option>
+                <option value="Dell">Dell</option>
+                <option value="Lenovo">Lenovo</option>
+                <option value="ASUS">ASUS</option>
+                <option value="Acer">Acer</option>
+                <option value="Apple">Apple</option>
+              </select>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Processor</label>
+              <select
+                value={processor}
+                onChange={e => handleFilterChange(setProcessor, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">All CPUs</option>
+                <option value="Ultra">Core Ultra</option>
+                <option value="i7">Intel Core i7</option>
+                <option value="i5">Intel Core i5</option>
+                <option value="i3">Intel Core i3</option>
+                <option value="Ryzen">AMD Ryzen</option>
+              </select>
+            </div>
           </div>
 
-          {/* Brand */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Brand</label>
-            <select
-              value={brand}
-              onChange={e => handleFilterChange(setBrand, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">All Brands</option>
-              <option value="Dell">Dell</option>
-              <option value="HP">HP</option>
-              <option value="Lenovo">Lenovo</option>
-              <option value="Apple">Apple</option>
-              <option value="Acer">Acer</option>
-              <option value="Asus">Asus</option>
-            </select>
+          {/* 2-Column Grid: RAM & Storage */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">RAM</label>
+              <select
+                value={ram}
+                onChange={e => handleFilterChange(setRam, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">Any RAM</option>
+                <option value="8">8 GB</option>
+                <option value="16">16 GB</option>
+                <option value="24">24 GB</option>
+                <option value="32">32 GB</option>
+              </select>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Storage</label>
+              <select
+                value={storage}
+                onChange={e => handleFilterChange(setStorage, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">Any Storage</option>
+                <option value="256">256 GB</option>
+                <option value="512">512 GB</option>
+                <option value="1 TB">1 TB</option>
+              </select>
+            </div>
           </div>
 
-          {/* Processor */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Processor</label>
-            <select
-              value={processor}
-              onChange={e => handleFilterChange(setProcessor, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">All Processors</option>
-              <option value="i3">Intel Core i3</option>
-              <option value="i5">Intel Core i5</option>
-              <option value="i7">Intel Core i7</option>
-              <option value="Ryzen">AMD Ryzen</option>
-              <option value="M1">Apple Silicon (M1/M2)</option>
-            </select>
+          {/* 2-Column Grid: Screen & Condition */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Screen</label>
+              <select
+                value={screenSize}
+                onChange={e => handleFilterChange(setScreenSize, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">All Sizes</option>
+                <option value="14">14" Display</option>
+                <option value="15.6">15.6" Display</option>
+                <option value="16">16" Display</option>
+                <option value="17">17" Display</option>
+              </select>
+            </div>
+
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Condition</label>
+              <select
+                value={condition}
+                onChange={e => handleFilterChange(setCondition, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none truncate"
+              >
+                <option value="">All Conditions</option>
+                <option value="Like New">Like New</option>
+                <option value="Very Good">Very Good</option>
+                <option value="Good">Good</option>
+              </select>
+            </div>
           </div>
 
-          {/* RAM */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">RAM</label>
-            <select
-              value={ram}
-              onChange={e => handleFilterChange(setRam, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">Any RAM</option>
-              <option value="8">8 GB</option>
-              <option value="16">16 GB</option>
-              <option value="32">32 GB</option>
-            </select>
-          </div>
+          {/* 2-Column Grid: Stock Status & Max Price */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Status</label>
+              <select
+                value={statusFilter}
+                onChange={e => handleFilterChange(setStatusFilter, e.target.value)}
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium truncate"
+              >
+                <option value="AVAILABLE">Available</option>
+                <option value="RESERVED">Reserved</option>
+                <option value="SOLD">Sold Stock</option>
+                <option value="ALL">All Statuses</option>
+              </select>
+            </div>
 
-          {/* Storage */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Storage Capacity</label>
-            <select
-              value={storage}
-              onChange={e => handleFilterChange(setStorage, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">Any Storage</option>
-              <option value="256">256 GB</option>
-              <option value="512">512 GB</option>
-              <option value="1 TB">1 TB</option>
-            </select>
-          </div>
-
-          {/* Condition */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Condition</label>
-            <select
-              value={condition}
-              onChange={e => handleFilterChange(setCondition, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">All Conditions</option>
-              <option value="Excellent">Excellent</option>
-              <option value="Very Good">Very Good</option>
-              <option value="Good">Good</option>
-            </select>
-          </div>
-
-          {/* Screen Size */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Screen Size</label>
-            <select
-              value={screenSize}
-              onChange={e => handleFilterChange(setScreenSize, e.target.value)}
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            >
-              <option value="">All Sizes</option>
-              <option value="13">13" Display</option>
-              <option value="14">14" Display</option>
-              <option value="15.6">15.6" Display</option>
-            </select>
-          </div>
-
-          {/* Max Price Filter */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-extrabold text-slate-700 uppercase">Max Budget (₹)</label>
-            <input
-              type="number"
-              value={maxPrice}
-              onChange={e => handleFilterChange(setMaxPrice, e.target.value)}
-              placeholder="e.g. 30000"
-              className="w-full bg-white text-slate-900 text-xs px-3 py-2.5 rounded-lg border border-slate-300"
-            />
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Max Budget</label>
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={e => handleFilterChange(setMaxPrice, e.target.value)}
+                placeholder="₹ Max"
+                className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
           </div>
         </aside>
 
@@ -367,90 +373,165 @@ export default function InventoryClient({ initialProducts, initialSettings }: In
       {/* MOBILE FILTERS DRAWER */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end lg:hidden">
-          <div className="w-full max-w-xs bg-white h-full overflow-y-auto p-6 space-y-6 shadow-xl flex flex-col justify-between">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                <h2 className="font-extrabold text-slate-900 text-base">Filter Stock</h2>
+          <div className="w-full max-w-xs bg-white h-full overflow-y-auto p-4 space-y-4 shadow-xl flex flex-col justify-between">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <h2 className="font-extrabold text-slate-900 text-sm">Filter Stock</h2>
                 <button onClick={() => setMobileFiltersOpen(false)} className="p-1 rounded-lg text-slate-500 hover:bg-slate-100">
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Search */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Search</label>
+              <div className="space-y-0.5">
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Search</label>
                 <input
                   type="text"
                   value={search}
                   onChange={e => handleFilterChange(setSearch, e.target.value)}
-                  placeholder="ThinkPad, i5, Dell..."
-                  className="w-full bg-slate-50 text-slate-900 text-xs p-2.5 rounded-lg border border-slate-300"
+                  placeholder="Model, CPU, specs..."
+                  className="w-full bg-slate-50 text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300"
                 />
               </div>
 
-              {/* Status */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Stock Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={e => handleFilterChange(setStatusFilter, e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 text-xs p-2.5 rounded-lg border border-slate-300"
-                >
-                  <option value="AVAILABLE">Available Only</option>
-                  <option value="RESERVED">Reserved</option>
-                  <option value="SOLD">Sold Stock</option>
-                  <option value="ALL">Show All Statuses</option>
-                </select>
+              {/* 2-Col Grids */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Brand</label>
+                  <select
+                    value={brand}
+                    onChange={e => handleFilterChange(setBrand, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">All Brands</option>
+                    <option value="HP">HP</option>
+                    <option value="Dell">Dell</option>
+                    <option value="Lenovo">Lenovo</option>
+                    <option value="ASUS">ASUS</option>
+                    <option value="Acer">Acer</option>
+                    <option value="Apple">Apple</option>
+                  </select>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Processor</label>
+                  <select
+                    value={processor}
+                    onChange={e => handleFilterChange(setProcessor, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">All CPUs</option>
+                    <option value="Ultra">Core Ultra</option>
+                    <option value="i7">Core i7</option>
+                    <option value="i5">Core i5</option>
+                    <option value="i3">Core i3</option>
+                    <option value="Ryzen">Ryzen</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Brand */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Brand</label>
-                <select
-                  value={brand}
-                  onChange={e => handleFilterChange(setBrand, e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 text-xs p-2.5 rounded-lg border border-slate-300"
-                >
-                  <option value="">All Brands</option>
-                  <option value="Dell">Dell</option>
-                  <option value="HP">HP</option>
-                  <option value="Lenovo">Lenovo</option>
-                  <option value="Apple">Apple</option>
-                  <option value="Acer">Acer</option>
-                  <option value="Asus">Asus</option>
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">RAM</label>
+                  <select
+                    value={ram}
+                    onChange={e => handleFilterChange(setRam, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">Any RAM</option>
+                    <option value="8">8 GB</option>
+                    <option value="16">16 GB</option>
+                    <option value="24">24 GB</option>
+                    <option value="32">32 GB</option>
+                  </select>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Storage</label>
+                  <select
+                    value={storage}
+                    onChange={e => handleFilterChange(setStorage, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">Any Storage</option>
+                    <option value="256">256 GB</option>
+                    <option value="512">512 GB</option>
+                    <option value="1 TB">1 TB</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Processor */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 uppercase">Processor</label>
-                <select
-                  value={processor}
-                  onChange={e => handleFilterChange(setProcessor, e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 text-xs p-2.5 rounded-lg border border-slate-300"
-                >
-                  <option value="">All Processors</option>
-                  <option value="i3">Intel Core i3</option>
-                  <option value="i5">Intel Core i5</option>
-                  <option value="i7">Intel Core i7</option>
-                  <option value="Ryzen">AMD Ryzen</option>
-                  <option value="M1">Apple Silicon</option>
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Screen</label>
+                  <select
+                    value={screenSize}
+                    onChange={e => handleFilterChange(setScreenSize, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">All Sizes</option>
+                    <option value="14">14" Display</option>
+                    <option value="15.6">15.6" Display</option>
+                    <option value="16">16" Display</option>
+                    <option value="17">17" Display</option>
+                  </select>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Condition</label>
+                  <select
+                    value={condition}
+                    onChange={e => handleFilterChange(setCondition, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  >
+                    <option value="">All</option>
+                    <option value="Like New">Like New</option>
+                    <option value="Very Good">Very Good</option>
+                    <option value="Good">Good</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={e => handleFilterChange(setStatusFilter, e.target.value)}
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300 font-medium"
+                  >
+                    <option value="AVAILABLE">Available</option>
+                    <option value="RESERVED">Reserved</option>
+                    <option value="SOLD">Sold</option>
+                    <option value="ALL">All</option>
+                  </select>
+                </div>
+
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Max Price</label>
+                  <input
+                    type="number"
+                    value={maxPrice}
+                    onChange={e => handleFilterChange(setMaxPrice, e.target.value)}
+                    placeholder="₹ Max"
+                    className="w-full bg-slate-50 text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-200 flex gap-2">
+            <div className="pt-2.5 border-t border-slate-200 flex gap-2">
               <button
                 onClick={clearAllFilters}
-                className="w-1/2 py-3 bg-slate-100 font-bold text-slate-700 rounded-lg text-xs"
+                className="w-1/2 py-2 bg-slate-100 font-bold text-slate-700 rounded-lg text-xs"
               >
                 Reset
               </button>
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="w-1/2 py-3 bg-blue-600 font-bold text-white rounded-lg text-xs"
+                className="w-1/2 py-2 bg-blue-600 font-bold text-white rounded-lg text-xs"
               >
-                Apply Filters
+                Apply
               </button>
             </div>
           </div>

@@ -17,6 +17,11 @@ export default function InventoryClient({ initialProducts, initialSettings }: In
 
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
+
+  // Synchronize state when initialProducts updates from server revalidation
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
   const [settings] = useState<BusinessSettings | null>(initialSettings);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [hasUserFiltered, setHasUserFiltered] = useState(Boolean(initialSearch));

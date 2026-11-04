@@ -145,7 +145,7 @@ export default function InventoryManagementPage() {
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={p.primary_image || 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'}
+                            src={p.images?.find(i => i.is_primary)?.image_url || p.primary_image || p.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'}
                             alt=""
                             className="w-12 h-12 object-cover rounded-lg bg-slate-800 shrink-0 border border-slate-700"
                           />

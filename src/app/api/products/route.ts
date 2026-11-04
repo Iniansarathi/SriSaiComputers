@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProducts, createProduct } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
+import { getProducts, createProduct, syncDatabaseToCloud, syncDatabaseFromCloud } from '@/lib/db';
 import { getAdminSession } from '@/lib/auth';
 import slugify from 'slugify';
 
 export async function GET(request: NextRequest) {
   try {
+    await syncDatabaseFromCloud();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || undefined;
     const brand = searchParams.get('brand') || undefined;
@@ -125,6 +127,13 @@ export async function POST(request: NextRequest) {
       },
       Array.isArray(images) ? images : []
     );
+
+    // Sync to Cloudinary and purge Next.js server component caches
+    await syncDatabaseToCloud();
+    revalidatePath('/laptops');
+    revalidatePath(`/laptops/${newProduct.slug}`);
+    revalidatePath('/');
+    revalidatePath('/admin/inventory');
 
     return NextResponse.json({ success: true, product: newProduct }, { status: 201 });
   } catch (error: any) {

@@ -20,7 +20,9 @@ export default function ProductCard({ product, whatsappNumber }: ProductCardProp
   const whatsappUrl = generateWhatsAppLink(whatsappNumber, product);
 
   const fallbackImage = 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80';
-  const imageSrc = product.primary_image || fallbackImage;
+  const primaryFromImages = product.images?.find(i => i.is_primary)?.image_url;
+  const firstImage = product.images?.[0]?.image_url;
+  const imageSrc = primaryFromImages || product.primary_image || firstImage || fallbackImage;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col h-full group">

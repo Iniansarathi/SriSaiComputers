@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductBySlugOrId, updateProduct, updateProductStatus, deleteProduct } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
+import { getProductBySlugOrId, updateProduct, updateProductStatus, deleteProduct, syncDatabaseToCloud, syncDatabaseFromCloud } from '@/lib/db';
 import { getAdminSession } from '@/lib/auth';
 import { deleteImageFile } from '@/lib/storage';
 
@@ -8,6 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await syncDatabaseFromCloud();
     const { id } = await params;
     const product = getProductBySlugOrId(id);
 
@@ -37,6 +39,10 @@ export async function PUT(
     // Quick status toggle
     if (body.action === 'UPDATE_STATUS' && body.status) {
       const updated = updateProductStatus(id, body.status);
+      await syncDatabaseToCloud();
+      revalidatePath('/laptops');
+      revalidatePath('/');
+      revalidatePath('/admin/inventory');
       return NextResponse.json({ success: true, product: updated });
     }
 
@@ -44,6 +50,14 @@ export async function PUT(
     if (!updatedProduct) {
       return NextResponse.json({ success: false, error: 'Product not found for update' }, { status: 404 });
     }
+
+    // Persist to Cloudinary and purge Next.js server component caches
+    await syncDatabaseToCloud();
+    revalidatePath('/laptops');
+    revalidatePath(`/laptops/${updatedProduct.slug}`);
+    revalidatePath('/');
+    revalidatePath('/admin/inventory');
+    revalidatePath(`/admin/inventory/${id}/edit`);
 
     return NextResponse.json({ success: true, product: updatedProduct });
   } catch (error: any) {
@@ -87,6 +101,11 @@ export async function DELETE(
     if (!deleted) {
       return NextResponse.json({ success: false, error: 'Product not found or delete failed' }, { status: 404 });
     }
+
+    await syncDatabaseToCloud();
+    revalidatePath('/laptops');
+    revalidatePath('/');
+    revalidatePath('/admin/inventory');
 
     return NextResponse.json({ success: true, message: 'Product and images deleted successfully' });
   } catch (error: any) {

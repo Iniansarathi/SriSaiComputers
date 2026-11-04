@@ -1,9 +1,12 @@
 import React from 'react';
 import { redirect, notFound } from 'next/navigation';
 import { getAdminSession } from '@/lib/auth';
-import { getProductBySlugOrId } from '@/lib/db';
+import { getProductBySlugOrId, syncDatabaseFromCloud } from '@/lib/db';
 import AdminHeader from '@/components/AdminHeader';
 import ProductForm from '@/components/ProductForm';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function EditLaptopPage(
   { params }: { params: Promise<{ id: string }> }
@@ -13,6 +16,7 @@ export default async function EditLaptopPage(
     redirect('/admin/login');
   }
 
+  await syncDatabaseFromCloud();
   const { id } = await params;
   const product = getProductBySlugOrId(id);
   if (!product) {

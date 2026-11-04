@@ -1,13 +1,15 @@
 import React from 'react';
 import Link from 'next/link';
-import { getProducts, getBusinessSettings } from '@/lib/db';
+import { getProducts, getBusinessSettings, syncDatabaseFromCloud } from '@/lib/db';
 import { generateGeneralWhatsAppLink } from '@/lib/whatsapp';
 import ProductCard from '@/components/ProductCard';
 import { Search, MapPin, Phone, Clock, MessageSquare, ShieldCheck, CheckCircle2, Laptop, ArrowRight } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Dynamic server rendering for live stock updates
 
-export default function HomePage() {
+export default async function HomePage() {
+  await syncDatabaseFromCloud();
   const settings = getBusinessSettings();
   const availableProducts = getProducts({ status: 'AVAILABLE', limit: 6 });
 

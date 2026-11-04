@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { getProducts, getBusinessSettings } from '@/lib/db';
+import { getProducts, getBusinessSettings, syncDatabaseFromCloud } from '@/lib/db';
 import InventoryClient from './InventoryClient';
 import { Metadata } from 'next';
 
@@ -8,9 +8,11 @@ export const metadata: Metadata = {
   description: 'Browse refurbished and used computers currently in stock at our Gandhipuram shop in Coimbatore. Check pricing, condition and WhatsApp enquiry.',
 };
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default function InventoryPage() {
+export default async function InventoryPage() {
+  await syncDatabaseFromCloud();
   const initialProducts = getProducts({ status: 'AVAILABLE', sortBy: 'newest' });
   const initialSettings = getBusinessSettings();
 

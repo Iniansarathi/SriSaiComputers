@@ -1,8 +1,11 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { getProductBySlugOrId, getBusinessSettings } from '@/lib/db';
+import { getProductBySlugOrId, getBusinessSettings, syncDatabaseFromCloud } from '@/lib/db';
 import ProductDetailClient from './ProductDetailClient';
 import { Metadata } from 'next';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -34,6 +37,7 @@ export async function generateMetadata(
 export default async function ProductDetailPage(
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  await syncDatabaseFromCloud();
   const { slug } = await params;
   const product = getProductBySlugOrId(slug);
 

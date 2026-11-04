@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
 import { Product, ProductImage, BusinessSettings, DashboardStats } from './types';
 
 const dataDir = path.join(process.cwd(), 'data');
@@ -1018,6 +1019,10 @@ export function updateProduct(id: string, productData: Partial<Product>, imagesL
   const existing = getProductBySlugOrId(id);
   if (!existing) return null;
 
+  const targetPrimary = (imagesList && imagesList.length > 0)
+    ? imagesList[0]
+    : (productData.primary_image || existing.primary_image);
+
   db.prepare(`
     UPDATE products SET
       title = COALESCE(?, title),
@@ -1047,7 +1052,7 @@ export function updateProduct(id: string, productData: Partial<Product>, imagesL
       price = COALESCE(?, price),
       status = COALESCE(?, status),
       featured = COALESCE(?, featured),
-      primary_image = COALESCE(?, primary_image),
+      primary_image = ?,
       updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(
@@ -1078,7 +1083,7 @@ export function updateProduct(id: string, productData: Partial<Product>, imagesL
     productData.price,
     productData.status,
     productData.featured !== undefined ? (productData.featured ? 1 : 0) : undefined,
-    productData.primary_image,
+    targetPrimary,
     id
   );
 
@@ -1090,7 +1095,7 @@ export function updateProduct(id: string, productData: Partial<Product>, imagesL
     `);
 
     imagesList.forEach((url, idx) => {
-      insertImg.run(`img_${id}_${idx}`, id, url, idx === 0 ? 1 : 0, idx);
+      insertImg.run(`img_${id}_${Date.now()}_${idx}`, id, url, idx === 0 ? 1 : 0, idx);
     });
 
     db.prepare('UPDATE products SET primary_image = ? WHERE id = ?').run(imagesList[0], id);
@@ -1112,4 +1117,149 @@ export function deleteProduct(id: string) {
 
 export function getAdminUser(username: string) {
   return db.prepare('SELECT * FROM admin_users WHERE username = ?').get(username) as any;
+}
+
+// ----------------------------------------------------
+// Cloudinary Persistent Sync Layer for Serverless Host
+// ----------------------------------------------------
+
+let lastSyncedRemoteTimestamp: number = 0;
+let lastLocalModifiedTimestamp: number = Date.now();
+let lastCloudCheckTime: number = 0;
+
+export async function syncDatabaseToCloud(): Promise<boolean> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    return false;
+  }
+
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+
+  try {
+    const products = db.prepare('SELECT * FROM products').all();
+    const images = db.prepare('SELECT * FROM product_images').all();
+    const settings = db.prepare('SELECT * FROM business_settings').all();
+
+    lastLocalModifiedTimestamp = Date.now();
+    const snapshot = {
+      version: 1,
+      updatedAt: new Date(lastLocalModifiedTimestamp).toISOString(),
+      timestamp: lastLocalModifiedTimestamp,
+      products,
+      images,
+      settings
+    };
+
+    const b64 = Buffer.from(JSON.stringify(snapshot)).toString('base64');
+    await cloudinary.uploader.upload('data:application/json;base64,' + b64, {
+      resource_type: 'raw',
+      public_id: 'sri_sai_database_state.json',
+      overwrite: true,
+      invalidate: true
+    });
+
+    lastSyncedRemoteTimestamp = lastLocalModifiedTimestamp;
+    return true;
+  } catch (error) {
+    console.error('Failed to sync database snapshot to Cloudinary:', error);
+    return false;
+  }
+}
+
+export async function syncDatabaseFromCloud(): Promise<boolean> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (!cloudName) return false;
+
+  const now = Date.now();
+  // Throttle check to at most once every 3 seconds for peak performance
+  if (now - lastCloudCheckTime < 3000) {
+    return true;
+  }
+  lastCloudCheckTime = now;
+
+  try {
+    const url = `https://res.cloudinary.com/${cloudName}/raw/upload/sri_sai_database_state.json?t=${now}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return false;
+
+    const data = await res.json();
+    if (!data || !Array.isArray(data.products) || !data.products.length) return false;
+
+    const remoteTimestamp = data.timestamp || new Date(data.updatedAt || 0).getTime();
+    if (remoteTimestamp <= lastSyncedRemoteTimestamp && remoteTimestamp <= lastLocalModifiedTimestamp) {
+      return true;
+    }
+
+    db.transaction(() => {
+      // 1. Sync Products
+      db.prepare('DELETE FROM product_images').run();
+      db.prepare('DELETE FROM products').run();
+
+      const insertProduct = db.prepare(`
+        INSERT INTO products (
+          id, slug, sku, brand, model, title, processor_brand, processor_model, processor_generation,
+          ram, ram_type, storage_capacity, storage_type, screen_size, resolution, gpu, operating_system,
+          condition, condition_notes, battery_condition, keyboard_layout, ports, connectivity, accessories,
+          description, price, status, featured, display_order, primary_image, created_at, updated_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?, ?
+        )
+      `);
+
+      for (const p of data.products) {
+        insertProduct.run(
+          p.id, p.slug, p.sku, p.brand, p.model, p.title, p.processor_brand, p.processor_model, p.processor_generation || '',
+          p.ram, p.ram_type || '', p.storage_capacity, p.storage_type, p.screen_size, p.resolution || '', p.gpu || '', p.operating_system || '',
+          p.condition, p.condition_notes || '', p.battery_condition || '', p.keyboard_layout || '', p.ports || '', p.connectivity || '',
+          p.accessories || '', p.description || '', p.price, p.status, p.featured ? 1 : 0, p.display_order || 0, p.primary_image || '',
+          p.created_at || new Date().toISOString(), p.updated_at || new Date().toISOString()
+        );
+      }
+
+      // 2. Sync Images
+      if (Array.isArray(data.images)) {
+        const insertImg = db.prepare(`
+          INSERT INTO product_images (id, product_id, image_url, is_primary, display_order)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        for (const img of data.images) {
+          insertImg.run(img.id, img.product_id, img.image_url, img.is_primary ? 1 : 0, img.display_order || 0);
+        }
+      }
+
+      // 3. Sync Settings
+      if (Array.isArray(data.settings) && data.settings[0]) {
+        const s = data.settings[0];
+        db.prepare('DELETE FROM business_settings').run();
+        db.prepare(`
+          INSERT INTO business_settings (
+            id, business_name, address, phone, whatsapp_number, email, google_maps_url,
+            instagram_url, facebook_url, about_text, hours_json, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          s.id || 'settings-1', s.business_name, s.address, s.phone, s.whatsapp_number, s.email,
+          s.google_maps_url, s.instagram_url, s.facebook_url, s.about_text, s.hours_json,
+          s.updated_at || new Date().toISOString()
+        );
+      }
+    })();
+
+    lastSyncedRemoteTimestamp = remoteTimestamp;
+    lastLocalModifiedTimestamp = remoteTimestamp;
+    return true;
+  } catch (err) {
+    console.error('Error syncing database from Cloudinary:', err);
+    return false;
+  }
 }

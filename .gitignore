@@ -47,6 +47,10 @@ data/*.db-wal
 public/uploads/*
 !public/uploads/.gitkeep
 
+# Sample list and raw local images
+Computers sample list/
+"Computers sample list/"
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
